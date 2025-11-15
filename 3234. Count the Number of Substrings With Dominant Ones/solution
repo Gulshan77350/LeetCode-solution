@@ -1,0 +1,59 @@
+class Solution {
+public:
+    long long numberOfSubstrings(string s) {
+        int n = s.size();
+        vector<int> pos;
+        pos.reserve(n + 2);
+        pos.push_back(-1);
+        for (int i = 0; i < n; ++i)
+            if (s[i] == '0') pos.push_back(i);
+        pos.push_back(n);
+
+        int m = (int)pos.size() - 2;
+        long long ans = 0;
+
+        for (int i = 1; i <= m + 1; ++i) {
+            long long gap = pos[i] - pos[i-1] - 1;
+            if (gap > 0) ans += gap * (gap + 1) / 2;
+        }
+
+        int ZMAX = min(200, m);
+        for (int z = 1; z <= ZMAX; ++z) {
+            long long Lmin = 1LL * z * z + z;
+            for (int a = 1; a + z - 1 <= m; ++a) {
+                int left_start = pos[a-1] + 1;
+                int left_end   = pos[a];
+                int right_start = pos[a+z-1];
+                int right_end   = pos[a+z] - 1;
+
+                long long maxLenPossible = (long long)right_end - left_start + 1;
+                if (maxLenPossible < Lmin) continue;
+
+                int s_upper_valid = min(left_end, (int)((long long)right_end - (Lmin - 1)));
+                if (s_upper_valid < left_start) continue;
+
+                int s_break = (int)((long long)right_start - (Lmin - 1));
+                int s1 = min(s_upper_valid, s_break);
+
+                long long right_options = (long long)right_end - right_start + 1;
+
+                long long total = 0;
+                if (s1 >= left_start) {
+                    total += (long long)(s1 - left_start + 1) * right_options;
+                }
+
+                int s2_start = max(left_start, s1 + 1);
+                if (s2_start <= s_upper_valid) {
+                    long long t = (long long)(s_upper_valid - s2_start + 1);
+                    long long first = (long long)right_end - (long long)s2_start - (Lmin - 1) + 1;
+                    long long last  = (long long)right_end - (long long)s_upper_valid - (Lmin - 1) + 1;
+                    total += t * (first + last) / 2;
+                }
+
+                ans += total;
+            }
+        }
+
+        return ans;
+    }
+};
