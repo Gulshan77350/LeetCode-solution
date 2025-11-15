@@ -1,0 +1,243 @@
+CODE AND INTUITION:
+
+class Solution {
+public:
+    long long numberOfSubstrings(string s) {
+        int n = s.size();
+        vector<int> pos;
+        pos.reserve(n + 2);
+        pos.push_back(-1);
+        for (int i = 0; i < n; ++i)
+            if (s[i] == '0') pos.push_back(i);
+        pos.push_back(n);
+
+        int m = (int)pos.size() - 2;
+        long long ans = 0;
+
+        for (int i = 1; i <= m + 1; ++i) {
+            long long gap = pos[i] - pos[i-1] - 1;
+            if (gap > 0) ans += gap * (gap + 1) / 2;
+        }
+
+        int ZMAX = min(200, m);
+        for (int z = 1; z <= ZMAX; ++z) {
+            long long Lmin = 1LL * z * z + z;
+            for (int a = 1; a + z - 1 <= m; ++a) {
+                int left_start = pos[a-1] + 1;
+                int left_end   = pos[a];
+                int right_start = pos[a+z-1];
+                int right_end   = pos[a+z] - 1;
+
+                long long maxLenPossible = (long long)right_end - left_start + 1;
+                if (maxLenPossible < Lmin) continue;
+
+                int s_upper_valid = min(left_end, (int)((long long)right_end - (Lmin - 1)));
+                if (s_upper_valid < left_start) continue;
+
+                int s_break = (int)((long long)right_start - (Lmin - 1));
+                int s1 = min(s_upper_valid, s_break);
+
+                long long right_options = (long long)right_end - right_start + 1;
+
+                long long total = 0;
+                if (s1 >= left_start) {
+                    total += (long long)(s1 - left_start + 1) * right_options;
+                }
+
+                int s2_start = max(left_start, s1 + 1);
+                if (s2_start <= s_upper_valid) {
+                    long long t = (long long)(s_upper_valid - s2_start + 1);
+                    long long first = (long long)right_end - (long long)s2_start - (Lmin - 1) + 1;
+                    long long last  = (long long)right_end - (long long)s_upper_valid - (Lmin - 1) + 1;
+                    total += t * (first + last) / 2;
+                }
+
+                ans += total;
+            }
+        }
+
+        return ans;
+    }
+};
+
+
+INTUITION:
+✅ Intuition Behind the Solution
+
+The problem being solved here is:
+
+Count number of substrings where
+#ones ≥ (#zeros)²
+
+This is a hard constraint because:
+
+zeros contribute quadratically,
+
+substring lengths vary,
+
+brute force (O(n²)) is impossible.
+
+This solution uses a mathematical + two-pointer + gap-based optimization.
+
+🔍 Key Ideas
+1. Preprocess all positions of zeros
+
+We store all indexes of '0' in pos[].
+
+Example:
+s = 11010110
+pos = [-1, 2, 4, 6, n]
+
+This lets us treat substrings by the zeros they include, instead of raw indices.
+
+2. Substrings with zero zeros (all '1's)
+
+Any continuous block of ones of size k contains:
+
+k*(k+1)/2 substrings
+
+
+So for every pair (pos[i-1], pos[i]), the ones-only gap is computed and added.
+
+3. For substrings with z ≥ 1 zeros
+
+Everything becomes trickier.
+
+Main Observation
+
+If a substring contains z zeros, it must have:
+
+length ≥ z² + z
+
+
+Why?
+
+Because:
+
+#ones ≥ z²
+length = #ones + z  ≥ z² + z
+
+
+So for each group of z consecutive zeros, we only need to count substring start-end pairs that satisfy this minimum length.
+
+4. Considering each block of z consecutive zeros
+
+Let the group of zero positions be:
+
+pos[a], pos[a+1], ..., pos[a+z-1]
+
+
+The substring:
+
+may start anywhere between pos[a-1] + 1 and pos[a]
+
+may end anywhere between pos[a+z-1] and pos[a+z] - 1
+
+These define:
+
+left range = positions before first zero
+
+right range = positions after last zero
+
+Both regions are continuous 1-runs.
+
+So the substring spans:
+
+[left_start ... s]
+    + (z zeros in middle)
+    + [e ... right_end]
+
+5. For each start s, how many valid end positions?
+
+The substring must satisfy:
+
+end - start + 1 ≥ Lmin = z² + z
+end ≥ start + Lmin - 1
+
+
+Given end can go up to right_end, the number of valid end choices is:
+
+count = right_end - (start + Lmin - 1) + 1
+
+
+This decreases linearly as start increases, which forms an arithmetic sequence.
+
+6. Split into two regions
+
+To avoid iterating over every possible (start, end), we split:
+
+Region A:
+
+Starts where all end positions are valid.
+
+Region B:
+
+Starts where only some ends are valid (linearly decreasing count).
+
+Using math, both regions are summed in O(1) time each.
+
+Thus each block of z zeros is processed in constant time.
+
+7. Why only up to 200 zeros?
+
+When z gets large:
+
+Lmin = z² + z grows very fast
+
+
+Beyond z ≈ 200, Lmin becomes so large that no substring can be long enough to satisfy the condition (string is too short).
+
+So only:
+
+z ≤ 200
+
+
+are needed, making the solution fast.
+
+✅ Time Complexity
+1. Preprocessing zero positions: O(n)
+2. Counting all-ones substrings: O(m)
+
+(where m is number of zeros)
+
+3. Main loop for z zeros:
+
+For each z from 1 to 200:
+
+iterate over all groups of z zeros: at most m
+
+each processed in O(1)
+
+So upper bound:
+
+O(200 * n) = O(n)
+
+
+Thus:
+
+👉 Final Time Complexity: O(n)
+
+(for n up to 2e5 comfortably)
+
+📦 Space Complexity
+
+We store:
+
+the list of zero positions: O(m) ≤ O(n)
+
+So:
+
+👉 Final Space Complexity: O(n)
+🎯 Summary of the Intuition
+
+Convert the problem from free indices to blocks of zeros and the ones gaps around them.
+
+All-ones substrings are counted trivially.
+
+For each block with z zeros, derive the minimum length condition.
+
+Use arithmetic progression math to count valid (start, end) pairs in O(1).
+
+Limit z to ≤ 200 because requirement grows quadratically.
+
+This transforms an otherwise impossible O(n²) brute force into a clean O(n) solution.
