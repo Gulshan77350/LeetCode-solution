@@ -1,0 +1,22 @@
+class Solution {
+public:
+    int numSub(string s) {
+        long long count = 0;
+        long long res = 0;
+        const long long MOD = 1e9 + 7;
+
+        for (char c : s) {
+            if (c == '1') {
+                count++;
+            } else {
+                res = (res + (count * (count + 1) / 2) % MOD) % MOD;
+                count = 0;
+            }
+        }
+
+        // Add the last segment if it ends with '1'
+        res = (res + (count * (count + 1) / 2) % MOD) % MOD;
+
+        return (int)res;
+    }
+};
